@@ -18,6 +18,7 @@ class Task:
     title: str
     duration_minutes: int
     priority: str          # "low" | "medium" | "high"
+    pet_name: str = ""     # which pet this task belongs to
     is_completed: bool = False
 
     def mark_complete(self) -> None:
@@ -71,6 +72,10 @@ class Owner:
 # Scheduler
 # ---------------------------------------------------------------------------
 
+# Priority order used for sorting — higher index = scheduled first
+PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
+
+
 class Scheduler:
     """
     Planning engine.
@@ -78,22 +83,30 @@ class Scheduler:
     then explains the resulting plan.
     """
 
-    def __init__(self, owner: Owner) -> None:
+    def __init__(self, owner: Owner, available_minutes: int = None) -> None:
         self.owner = owner
+        # Allow overriding available_minutes at schedule time for what-if scenarios
+        self.available_minutes = available_minutes if available_minutes is not None else owner.available_minutes
         self.plan: List[Task] = []
 
     def build_plan(self) -> None:
         """
-        Collect all pending tasks from every pet, sort by priority,
-        and fill the plan up to the owner's available_minutes budget.
+        Collect all pending tasks from every pet, sort by priority then by
+        shortest duration as a tiebreaker, and fill the plan up to the
+        available_minutes budget.
+        Resets self.plan on each call so it is safe to call multiple times.
         """
+        self.plan = []
         pass
 
     def explain_plan(self) -> str:
         """
         Return a human-readable explanation of why each task in the plan
         was chosen and in what order.
+        Returns a message if build_plan has not been called yet.
         """
+        if not self.plan:
+            return "No plan has been built yet. Call build_plan() first."
         pass
 
     def get_total_duration(self) -> int:
