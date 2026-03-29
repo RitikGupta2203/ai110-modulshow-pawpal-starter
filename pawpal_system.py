@@ -22,12 +22,14 @@ class Task:
     is_completed: bool = False
 
     def mark_complete(self) -> None:
-        """Mark this task as done."""
-        pass
+        """Set is_completed to True."""
+        self.is_completed = True
 
     def __repr__(self) -> str:
-        """Return a readable string representation of the task."""
-        pass
+        """Return a formatted string showing priority, pet, title, duration, and status."""
+        status = "done" if self.is_completed else "pending"
+        owner = f"{self.pet_name}'s " if self.pet_name else ""
+        return f"[{self.priority.upper()}] {owner}{self.title} ({self.duration_minutes} min) — {status}"
 
 
 # ---------------------------------------------------------------------------
@@ -43,12 +45,13 @@ class Pet:
     tasks: List[Task] = field(default_factory=list)
 
     def add_task(self, task: Task) -> None:
-        """Add a care task to this pet's task list."""
-        pass
+        """Stamp the task with this pet's name and append it to the task list."""
+        task.pet_name = self.name
+        self.tasks.append(task)
 
     def get_pending_tasks(self) -> List[Task]:
-        """Return only tasks that have not been completed yet."""
-        pass
+        """Return all tasks where is_completed is False."""
+        return [task for task in self.tasks if not task.is_completed]
 
 
 # ---------------------------------------------------------------------------
@@ -64,8 +67,15 @@ class Owner:
         self.pets: List[Pet] = []
 
     def add_pet(self, pet: Pet) -> None:
-        """Register a pet to this owner."""
-        pass
+        """Append a Pet to this owner's pet list."""
+        self.pets.append(pet)
+
+    def get_all_pending_tasks(self) -> List[Task]:
+        """Collect and return pending tasks from every pet in a single flat list."""
+        tasks = []
+        for pet in self.pets:
+            tasks.extend(pet.get_pending_tasks())
+        return tasks
 
 
 # ---------------------------------------------------------------------------
@@ -90,25 +100,33 @@ class Scheduler:
         self.plan: List[Task] = []
 
     def build_plan(self) -> None:
-        """
-        Collect all pending tasks from every pet, sort by priority then by
-        shortest duration as a tiebreaker, and fill the plan up to the
-        available_minutes budget.
-        Resets self.plan on each call so it is safe to call multiple times.
-        """
+        """Sort all pending tasks by priority (then duration) and fill the plan up to the time budget."""
         self.plan = []
-        pass
+        pending = self.owner.get_all_pending_tasks()
+        sorted_tasks = sorted(pending, key=lambda t: (PRIORITY_ORDER[t.priority], t.duration_minutes))
+        time_used = 0
+        for task in sorted_tasks:
+            if time_used + task.duration_minutes <= self.available_minutes:
+                self.plan.append(task)
+                time_used += task.duration_minutes
 
     def explain_plan(self) -> str:
-        """
-        Return a human-readable explanation of why each task in the plan
-        was chosen and in what order.
-        Returns a message if build_plan has not been called yet.
-        """
+        """Return a plain-language summary of the plan, including any tasks that didn't fit."""
         if not self.plan:
             return "No plan has been built yet. Call build_plan() first."
-        pass
+        total = self.get_total_duration()
+        lines = [
+            f"Plan for {self.owner.name} — {total} of {self.available_minutes} min used:\n"
+        ]
+        for i, task in enumerate(self.plan, start=1):
+            lines.append(f"  {i}. {task.title} ({task.pet_name}, {task.duration_minutes} min, priority: {task.priority})")
+        skipped = [t for t in self.owner.get_all_pending_tasks() if t not in self.plan]
+        if skipped:
+            lines.append("\nNot scheduled (didn't fit in time budget):")
+            for task in skipped:
+                lines.append(f"  - {task.title} ({task.pet_name}, {task.duration_minutes} min)")
+        return "\n".join(lines)
 
     def get_total_duration(self) -> int:
-        """Return the sum of duration_minutes for all tasks currently in the plan."""
-        pass
+        """Return the total minutes consumed by all tasks in the current plan."""
+        return sum(task.duration_minutes for task in self.plan)
