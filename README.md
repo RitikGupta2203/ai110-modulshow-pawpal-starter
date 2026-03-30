@@ -40,14 +40,10 @@ The module-level `filter_tasks(tasks, pet_name, status)` utility narrows any tas
 ---
 
 ## 📸 Demo
+![alt text](Screenshots/Demo_Screenshot.png)
 
-> **To add your screenshot:** run `streamlit run app.py`, interact with the app, take a screenshot, save it as `docs/demo.png`, then replace the placeholder below.
+![alt text](Screenshots/Demo_Screenshot2.png)
 
-```
-docs/demo.png  ← place your screenshot here
-```
-
-![PawPal+ demo screenshot](docs/demo.png)
 
 ---
 
