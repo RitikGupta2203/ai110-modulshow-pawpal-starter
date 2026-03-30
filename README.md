@@ -42,6 +42,8 @@ The module-level `filter_tasks(tasks, pet_name, status)` utility narrows any tas
 ## 📸 Demo
 ![alt text](Screenshots/Demo_Screenshot.png)
 
+------------------------------------------------------
+
 ![alt text](Screenshots/Demo_Screenshot2.png)
 
 
