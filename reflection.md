@@ -50,8 +50,37 @@ Two smaller things: I made `build_plan()` reset the plan list at the start so ca
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+**Tradeoff: greedy priority-first fill vs. optimal knapsack packing**
+
+The scheduler sorts all pending tasks by priority (high → medium → low) and, within each tier, by duration (shortest first). It then walks the sorted list once and adds each task to the plan if it fits in the remaining time budget — stopping only when the budget is exhausted or all tasks have been considered. This is a greedy, single-pass algorithm.
+
+The consequence is that the plan is not always the most time-efficient combination of tasks. For example, if the budget is 30 minutes and the pending tasks are `[high/25 min, high/20 min, medium/10 min]`, the greedy pass schedules only the 25-minute high-priority task (leaving 5 minutes unused), when the combination of `[20 min + 10 min = 30 min]` would fill the day completely and still cover a high-priority task.
+
+A true 0/1 knapsack solver could find the optimal combination, but its worst-case runtime is O(n × W) where W is the budget in minutes — and for a pet-care app with a full-day budget (1440 minutes) and a realistic number of tasks, that overhead is unnecessary.
+
+**Why this tradeoff is reasonable here:**
+
+For a pet-care schedule, a guaranteed high-priority task (medication, feeding) being completed is worth more than squeezing maximum task-count into the day. A greedy priority-first approach ensures that the most critical care always gets scheduled first, which matches the real-world concern: a missed feeding matters more than five unused minutes. The algorithm is also O(n log n) due to sorting, which keeps the UI responsive even if the task list grows.
+
+**Tradeoff reviewed with AI (readability vs. performance):**
+
+When reviewing `conflict_warnings()`, a Copilot suggestion was to collapse the method into a single list comprehension using Python's walrus operator (`:=`) to filter out `None` start times inline:
+
+```python
+# AI-suggested version (more Pythonic)
+return [
+    f"WARNING ({'same pet' if a.pet_name == b.pet_name else 'cross-pet'}): ..."
+    for a, b in self.detect_conflicts()
+    if (sa := self._effective_start(a)) is not None
+    and (sb := self._effective_start(b)) is not None
+]
+```
+
+The version kept in the codebase uses a for-loop with named intermediate variables (`overlap_start`, `overlap_end`, `overlap_mins`, `scope`). The decision was to keep the for-loop because:
+
+1. The walrus operator is unfamiliar to many readers and makes the `None` guard harder to spot.
+2. The named variables (`overlap_start`, `overlap_end`) make the interval arithmetic self-documenting — removing them forces the reader to mentally re-derive the overlap calculation from inlined expressions.
+3. The one genuine improvement from the AI review — that `_fmt()` was being redefined on every loop iteration — was extracted above the loop, giving the performance gain without sacrificing readability.
 
 ---
 
