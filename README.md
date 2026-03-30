@@ -54,6 +54,40 @@ The new task is appended to the pet's list automatically — no manual renewal n
 
 ---
 
+## Testing PawPal+
+
+### Run the test suite
+
+```bash
+python -m pytest
+```
+
+For verbose output (shows each test name and pass/fail):
+
+```bash
+python -m pytest -v
+```
+
+### What the tests cover
+
+The suite contains **30 tests** across five areas:
+
+| Area | Tests | What is verified |
+|---|---|---|
+| **Sorting correctness** | 2 | `sort_by_time()` returns tasks in ascending start-minute order; floating tasks receive sequential slot assignments starting at minute 0 |
+| **Recurrence logic** | 8 | Completing a `daily` task spawns a new pending copy with `due_date = today + 1 day`; `weekly` tasks advance by 7 days; completing a non-recurring task returns `None` and adds nothing; calling `next_occurrence()` on a one-off task raises `ValueError` |
+| **Conflict detection** | 5 | Overlapping time windows are flagged; back-to-back tasks (end == next start) are not; two tasks at the exact same start minute produce exactly one conflict; cross-pet conflicts are labeled separately from same-pet conflicts |
+| **Filtering** | 5 | `filter_tasks()` correctly narrows by pet name, completion status, or both combined; an unknown pet name returns an empty list without error |
+| **Core task/pet behavior** | 10 | `mark_complete()` flips status; `add_task()` stamps pet name; `build_plan()` respects the time budget and excludes tasks that don't fit |
+
+### Confidence level
+
+**4 / 5 stars**
+
+All 30 tests pass against the current implementation, covering happy paths and the key edge cases (zero-task pets, exact-boundary times, non-recurring recurrence calls, budget overflow). One star is held back because the suite does not yet include integration tests against the Streamlit UI layer or end-to-end scenarios with a real database/persistence layer — areas that would need coverage before a production release.
+
+---
+
 ### Suggested workflow
 
 1. Read the scenario carefully and identify requirements and edge cases.
